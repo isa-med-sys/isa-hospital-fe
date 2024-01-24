@@ -1,4 +1,6 @@
 import { Component } from '@angular/core';
+import { Title } from '@angular/platform-browser';
+import { AuthService } from './authentication/auth.service';
 
 @Component({
   selector: 'app-root',
@@ -7,4 +9,15 @@ import { Component } from '@angular/core';
 })
 export class AppComponent {
   title = 'med-hospital';
+
+  constructor(private authService: AuthService, private titleService: Title) { }
+
+  ngOnInit(): void {
+    this.titleService.setTitle('Hospital');
+    this.checkIfUserExists();
+  }
+
+  private checkIfUserExists(): void {
+    this.authService.checkIfUserExists();
+  }
 }

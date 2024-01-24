@@ -1,0 +1,21 @@
+<section class="landing-section">
+    <div class="form-container">
+        <form [formGroup]="loginForm" (ngSubmit)="login()">
+            <div>
+                <mat-form-field>
+                    <mat-label>Email</mat-label>
+                    <input matInput formControlName="email" type="text" />
+                </mat-form-field>
+                <mat-form-field>
+                    <mat-label>Password</mat-label>
+                    <input matInput formControlName="password" type="password" />
+                </mat-form-field>
+                <button color="primary" type="submit" mat-raised-button>Login</button>
+            </div>
+        </form>
+    </div>
+</section>
+
+<footer>
+    <a href="mailto:medicalequipment753&#64;gmail.com">Supplied By MedEquip</a>
+</footer>
