@@ -14,14 +14,17 @@
     background: url('../../../../assets/images/landing_page.jpg') center/cover no-repeat;
 }
 
-// .form-container {
-//     display: flex;
-//     flex-direction: column;
-//     align-items: center;
-//     justify-content: center;
-//     height: 100%;
-//     background: rgba(255, 255, 255, 0.8);
-// }
+.form-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 80%;
+  width: auto;
+  background: rgba(255, 255, 255, 0.8);
+  margin: 56px;
+  border-radius: 16px;
+}
 
 // form {
 //     width: 400px;

@@ -1,7 +1,44 @@
 <button mat-raised-button color="accent" class="logout-button" (click)="onLogout()">Logout</button>
 <section class="form-section">
     <div class="form-container">
-        <!-- TODO: Contract CRUD -->
+      <form [formGroup]="contractFields" (ngSubmit)="onSubmitForm()">
+        <div class="form-fields">
+          <mat-form-field>
+            <mat-label>Company:</mat-label>
+            <mat-select formControlName="company">
+              <mat-option *ngFor="let company of companies" [value]="company">
+                {{ company.name }}
+              </mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field>
+            <mat-label>Start Date:</mat-label>
+            <input matInput formControlName="date" type="date"/>
+          </mat-form-field>
+
+          <mat-form-field>
+            <mat-label>Quantity:</mat-label>
+            <input matInput formControlName="quantity" type="number"/>
+          </mat-form-field>
+
+          <div *ngIf="showEquipment">
+            <div *ngFor="let eq of equipment">
+              <p>{{ eq.name }}
+              <button mat-button color="primary" (click)="addEquipment(eq)">Add</button></p>
+            </div>
+            <div *ngFor="let eq of selectedEquipment">
+              <p>{{ eq.name }} - {{ getQuantity(eq.id) }}
+              <button mat-button color="primary" (click)="removeEquipment(eq)">Remove</button></p>
+            </div>
+          </div>
+        </div>
+
+        <div class="buttons">
+          <button color="primary" type="submit" mat-raised-button>Submit</button>
+<!--          <button mat-button type="button" (click)="discardForm()">Discard</button>-->
+        </div>
+      </form>
     </div>
 </section>
 
