@@ -7,6 +7,7 @@ import { HTTP_INTERCEPTORS } from '@angular/common/http';
 import { LayoutModule } from './main/layout/layout.module';
 import { JwtInterceptor } from './authentication/jwt/jwt.interceptor';
 import { ContractModule } from './main/contract/contract.module';
+import { DatePipe } from '@angular/common';
 
 @NgModule({
   declarations: [
@@ -24,7 +25,8 @@ import { ContractModule } from './main/contract/contract.module';
       provide: HTTP_INTERCEPTORS,
       useClass: JwtInterceptor,
       multi: true,
-    }
+    },
+    DatePipe
   ],
   bootstrap: [AppComponent]
 })

@@ -1,7 +1,8 @@
-import { AfterViewInit, Component, OnDestroy, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { AuthService } from 'src/app/authentication/auth.service';
 import { User } from 'src/shared/model/user.model';
 import { Contract } from "../../../../shared/model/contract";
+import { DatePipe } from '@angular/common';
 import { ContractService } from "../contract.service";
 import { FormBuilder, FormGroup, Validators } from "@angular/forms";
 import { Company } from "../../../../shared/model/company";
@@ -10,6 +11,7 @@ import { MatSnackBar, MatSnackBarVerticalPosition } from "@angular/material/snac
 import * as SockJS from 'sockjs-client';
 import * as Stomp from 'stompjs';
 import { environment } from 'src/env/environment';
+import { AppNotification } from 'src/shared/model/notification';
 
 @Component({
   selector: 'app-contract-form',
@@ -28,6 +30,7 @@ export class ContractFormComponent implements OnInit, OnDestroy {
 
   contractFields!: FormGroup;
   companies: Company[] = [];
+  notifications: AppNotification[] = [];
 
   showEquipment: boolean = false;
   equipment: Equipment[] = [];
@@ -37,44 +40,90 @@ export class ContractFormComponent implements OnInit, OnDestroy {
   constructor(private authService: AuthService,
               private contractService: ContractService,
               private fb: FormBuilder,
-              private snackBar: MatSnackBar) {
+              private snackBar: MatSnackBar,
+              private datePipe: DatePipe
+              ) {
     this.createContractForm();
   }
 
   ngOnInit(): void {
+    this.subscribeToUserChanges();
+  }
+
+  ngOnDestroy(): void {
+    this.closeWebSocketConnection();
+  }
+
+  private subscribeToUserChanges(): void {
     this.authService.user$.subscribe(user => {
       this.user = user;
-      this.getContract();
-      this.initializeWebSocketConnection();
+      this.initializeWebSocketConnection(() => {
+        this.getContract();
+        this.getNotifications();
+      });
     });
   }
 
-  ngOnDestroy() {
-    this.closeWebSocketConnection();
+  private initializeWebSocketConnection(callback: () => void): void {
+    if (!this.user || this.isLoaded) {
+      return;
+    }
+
+    const ws = new SockJS(environment.socketHost);
+    this.stompClient = Stomp.over(ws);
+
+    this.stompClient.connect({}, () => {
+      this.isLoaded = true;
+      this.openSocket();
+      callback();
+    });
+  }
+
+  private openSocket(): void {
+    if (!this.user || !this.isLoaded) {
+      return;
+    }
+
+    this.isCustomSocketOpened = true;
+
+    const contractsTopic = `/socket-publisher/contracts/${this.user.id}`;
+    const notificationsTopic = `/socket-publisher/notifications/${this.user.id}`;
+
+    this.stompClient.subscribe(contractsTopic, (message: { body: string }) => {
+      this.handleContractUpdate(message);
+    });
+
+    this.stompClient.subscribe(notificationsTopic, (message: { body: string }) => {
+      this.handleNotification(message);
+    });
+  }
+
+  handleContractUpdate(message: { body: string }): void {
+    this.contract = JSON.parse(message.body);
+
+    if (this.contract) {
+      this.shouldCreateContract = false;
+    }
+
+    this.getCompanies();
+  }
+
+  handleNotification(message: { body: string }): void {
+    const parsedMessage = JSON.parse(message.body);
+    alert(parsedMessage.message);
+
+    const newNotification: AppNotification = {
+      userId: parsedMessage.userId,
+      timestamp: parsedMessage.timestamp,
+      message: parsedMessage.message
+    };
+
+    this.notifications = [newNotification, ...this.notifications];
   }
 
   closeWebSocketConnection() {
     if (this.stompClient) {
       this.stompClient.disconnect();
-    }
-  }
-
-  initializeWebSocketConnection() {
-    let ws = new SockJS(environment.socketHost);
-    this.stompClient = Stomp.over(ws);
-    let that = this;
-
-    this.stompClient.connect({}, function () {
-      that.isLoaded = true;
-      that.openSocket();
-    });
-  }
-
-  openSocket() {
-    if (this.user && this.isLoaded) {
-      this.isCustomSocketOpened = true;
-      this.stompClient.subscribe("/socket-publisher/" + this.user.id, (message: { body: string }) => {
-      });
     }
   }
 
@@ -91,10 +140,6 @@ export class ContractFormComponent implements OnInit, OnDestroy {
     if(this.user) {
       this.contractService.getUsersContract(this.user.id).subscribe({
         next: (result) => {
-          this.contract = result;
-          if (this.contract) {
-            this.shouldCreateContract = false;
-          }
           this.getCompanies();
         }
       });
@@ -115,6 +160,19 @@ export class ContractFormComponent implements OnInit, OnDestroy {
         this.initializeForm();
       }
     });
+  }
+
+  getNotifications(): void {
+    if (this.user) {
+      this.contractService.getNotificationsByUser(this.user.id).subscribe({
+        next: (notifications) => {
+          this.notifications = notifications;
+        },
+        error: (error) => {
+          console.error('Error fetching notifications:', error);
+        }
+      });
+    }
   }
 
   initializeSelectedEquipment() {
@@ -208,8 +266,7 @@ export class ContractFormComponent implements OnInit, OnDestroy {
       next: (result) => {
         this.shouldCreateContract = false;
         console.log(result);
-        this.getContract();
-        console.log('Created.');
+        alert('Contract created!');
       }
     });
   }
@@ -218,11 +275,24 @@ export class ContractFormComponent implements OnInit, OnDestroy {
     this.contractService.updateContract(newContract.id, newContract).subscribe({
       next: (result) => {
         console.log(result);
-        this.getContract();
-        console.log('Updated.');
+        alert('Contract updated!');
       }
     });
   }
+
+  deleteContract(): void {
+    if (this.contract?.id) {
+      const confirmed = window.confirm('Are you sure you want to delete this contract?');
+      this.contractService.deleteContract(this.contract.id).subscribe({
+        next: (result) => {
+          console.log(result);
+          alert('Contract deleted!');
+          this.contractFields.reset();
+        }
+      });
+    }
+  }
+
 
   addEquipment(eq: Equipment) {
     const quantityControl = this.contractFields.get('quantity');
@@ -268,5 +338,14 @@ export class ContractFormComponent implements OnInit, OnDestroy {
       duration: 30000,
       verticalPosition: verticalPosition,
     });
+  }
+
+  formatDate(dateArray: number[] | null): string {
+    if (dateArray) {
+      const dateObject = new Date(dateArray[0], dateArray[1] - 1, dateArray[2], dateArray[3], dateArray[4]);
+      return this.datePipe.transform(dateObject, 'dd.MM.yyyy HH:mm') ?? 'N/A';
+    } else {
+      return 'N/A';
+    }
   }
 }
