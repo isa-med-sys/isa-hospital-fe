@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { AfterViewInit, Component, OnDestroy, OnInit } from '@angular/core';
 import { AuthService } from 'src/app/authentication/auth.service';
 import { User } from 'src/shared/model/user.model';
 import { Contract } from "../../../../shared/model/contract";
@@ -7,13 +7,20 @@ import { FormBuilder, FormGroup, Validators } from "@angular/forms";
 import { Company } from "../../../../shared/model/company";
 import { Equipment } from "../../../../shared/model/equipment";
 import { MatSnackBar, MatSnackBarVerticalPosition } from "@angular/material/snack-bar";
+import * as SockJS from 'sockjs-client';
+import * as Stomp from 'stompjs';
+import { environment } from 'src/env/environment';
 
 @Component({
   selector: 'app-contract-form',
   templateUrl: './contract-form.component.html',
   styleUrls: ['./contract-form.component.scss']
 })
-export class ContractFormComponent {
+export class ContractFormComponent implements OnInit, OnDestroy {
+  private stompClient: any;
+  isLoaded: boolean = false;
+  isCustomSocketOpened = false;
+
   user: User | undefined;
 
   contract: Contract | undefined;
@@ -38,11 +45,40 @@ export class ContractFormComponent {
     this.authService.user$.subscribe(user => {
       this.user = user;
       this.getContract();
+      this.initializeWebSocketConnection();
     });
   }
 
-  createContractForm() {
+  ngOnDestroy() {
+    this.closeWebSocketConnection();
+  }
 
+  closeWebSocketConnection() {
+    if (this.stompClient) {
+      this.stompClient.disconnect();
+    }
+  }
+
+  initializeWebSocketConnection() {
+    let ws = new SockJS(environment.socketHost);
+    this.stompClient = Stomp.over(ws);
+    let that = this;
+
+    this.stompClient.connect({}, function () {
+      that.isLoaded = true;
+      that.openSocket();
+    });
+  }
+
+  openSocket() {
+    if (this.user && this.isLoaded) {
+      this.isCustomSocketOpened = true;
+      this.stompClient.subscribe("/socket-publisher/" + this.user.id, (message: { body: string }) => {
+      });
+    }
+  }
+
+  createContractForm() {
     this.contractFields = this.fb.group({
       userId: [null, Validators.required],
       company: [null, Validators.required],
