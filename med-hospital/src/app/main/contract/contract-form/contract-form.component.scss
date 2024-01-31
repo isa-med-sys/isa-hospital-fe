@@ -11,17 +11,19 @@
     height: 100vh;
     overflow: hidden;
     z-index: 1;
-    background: url('../../../../assets/images/landing_page.jpg') center/cover no-repeat;
 }
 
-// .form-container {
-//     display: flex;
-//     flex-direction: column;
-//     align-items: center;
-//     justify-content: center;
-//     height: 100%;
-//     background: rgba(255, 255, 255, 0.8);
-// }
+.form-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 80%;
+  width: auto;
+  background: rgba(255, 255, 255, 0.8);
+  margin: 56px;
+  border-radius: 16px;
+}
 
 // form {
 //     width: 400px;
@@ -58,4 +60,49 @@ footer {
     height: 20px;
     font-size: 12px;
     z-index: 1000;
+}
+        
+.content-section {
+    background: url('../../../../assets/images/landing_page.jpg') center/cover no-repeat;
+    display: flex;
+    justify-content: space-between;
+    margin: 0 auto;
+}
+
+.notifications-section {
+    background-color: #f8f8f8;
+    padding: 10px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    width: 20%;
+}
+
+.scrollable-list {
+    max-height: 425px;
+    overflow-y: auto;
+}
+
+.notifications-section h2 {
+    color: #333;
+    font-size: 18px;
+    margin-bottom: 8px;
+}
+
+.notifications-list {
+    list-style-type: none;
+    padding: 0;
+}
+
+.notification-item {
+    background-color: #fff;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    padding: 8px;
+    margin-bottom: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.notification-item p {
+    margin: 5px 0;
+    font-size: 14px;
 }
